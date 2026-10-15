@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Preproducción audiovisual · Aprende y juega</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Courier+Prime:wght@400;700&family=Figtree:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script>
+tailwind.config={theme:{extend:{fontFamily:{display:['"Bricolage Grotesque"','Figtree','sans-serif'],script:['"Courier Prime"','Courier New','monospace']},
+colors:{page:'var(--bg)',surf:'var(--surface)',ink:'var(--ink)',mut:'var(--muted)',line:'var(--line)',brand:'var(--brand)',sun:'var(--sun)',ok:'var(--ok)',okbg:'var(--okbg)',bad:'var(--bad)',badbg:'var(--badbg)'}}}}
+</script>
+<style>
+:root{--bg:#f4f6fd;--surface:#fff;--ink:#151a33;--muted:#566082;--line:#dde1f3;--brand:#5b3df5;--sun:#ffc93c;--ok:#0e8f67;--okbg:#dcf5ec;--bad:#d63a52;--badbg:#ffe3e7;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1124;--surface:#171b36;--ink:#eef0fb;--muted:#a5acd0;--line:#2b3159;--brand:#8f7bff;--ok:#4cd6a2;--okbg:#103a31;--bad:#ff7a8e;--badbg:#45202b}}
+:root[data-theme="dark"]{--bg:#0e1124;--surface:#171b36;--ink:#eef0fb;--muted:#a5acd0;--line:#2b3159;--brand:#8f7bff;--ok:#4cd6a2;--okbg:#103a31;--bad:#ff7a8e;--badbg:#45202b}
+html{scroll-behavior:smooth;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Figtree,system-ui,sans-serif;line-height:1.6}
+*:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.hl{background:var(--sun);color:#151a33;border-radius:4px;padding:0 3px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/framer-motion@10.16.4/dist/framer-motion.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.js"></script>
+<script>
+const {useState,useMemo}=React;
+const html=htm.bind(React.createElement);
+const RM=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* Framer Motion, con respaldo sin animación si no carga */
+const FM=window.Motion||window.FramerMotion||{};
+const _c={};
+const motion=FM.motion||new Proxy({},{get:(_,t)=>_c[t]||(_c[t]=({initial,animate,whileHover,whileTap,exit,transition,...p})=>React.createElement(t,p))});
+const AnimatePresence=FM.AnimatePresence||(({children})=>children);
+
+const Ph=({emoji,label,a='#5b3df5',b='#ff5d73'})=>html`
+<div className="relative aspect-video rounded-2xl overflow-hidden grid place-items-center" style=${{background:`linear-gradient(135deg,${a},${b})`}} role="img" aria-label=${'Imagen ilustrativa: '+label}>
+  <span className="absolute top-2 left-2 w-5 h-5 border-t-4 border-l-4 border-white/80"></span><span className="absolute top-2 right-2 w-5 h-5 border-t-4 border-r-4 border-white/80"></span>
+  <span className="absolute bottom-2 left-2 w-5 h-5 border-b-4 border-l-4 border-white/80"></span><span className="absolute bottom-2 right-2 w-5 h-5 border-b-4 border-r-4 border-white/80"></span>
+  <span className="text-5xl md:text-6xl drop-shadow">${emoji}</span>
+  <span className="absolute bottom-3 text-xs text-white font-bold px-3 text-center">Imagen: ${label}</span>
+</div>`;
+
+const Section=({id,title,intro,alt,children})=>html`
+<section id=${id} className=${'py-16 '+(alt?'bg-surf':'')}><div className="max-w-5xl mx-auto px-5">
+  <h2 className="font-display text-3xl md:text-5xl font-extrabold leading-tight mb-3">${title}</h2>
+  ${intro&&html`<p className="text-mut text-lg max-w-2xl mb-10">${intro}</p>`}${children}
+</div></section>`;
+
+/* ---------- Datos ---------- */
+const CONCEPTS=[
+ {ico:'💡',t:'Idea',d:'Lo que quieres contar, resumido en una sola frase.',emo:'💡✨',img:'Una bombilla sobre una hoja en blanco',a:'#5b3df5',b:'#9b5cff',bul:[['✍️','Cabe en una línea'],['👀','Se puede imaginar en imágenes'],['❤️','Parte de algo que te importa']],ex:'Laura descubre que su salón no separa la basura.'},
+ {ico:'🎯',t:'Propósito',d:'Para qué lo cuentas: informar, convencer, emocionar o entretener.',emo:'🎯📣',img:'Una diana con una flecha',a:'#ff5d73',b:'#ff9a5c',bul:[['📚','Informar: explicar algo'],['🗣️','Convencer: cambiar una opinión'],['😮','Emocionar o entretener']],ex:'Convencer a los demás de reciclar.'},
+ {ico:'👥',t:'Público',d:'Las personas que lo van a ver. Su edad e intereses cambian cómo lo cuentas.',emo:'👥📺',img:'Un grupo de estudiantes mirando una pantalla',a:'#0e8f67',b:'#3bc9db',bul:[['🎂','¿Qué edad tienen?'],['🎧','¿Qué les gusta?'],['🧠','¿Qué ya saben del tema?']],ex:'Estudiantes de sexto y séptimo.'}
+];
+const COLS=[
+ {k:'Escena',d:'Número y letra de cada toma. Sirve para encontrarla rápido al grabar.'},
+ {k:'Plano',d:'Qué tan cerca o lejos se muestra lo que se graba: general, medio, primer plano o detalle.'},
+ {k:'Imagen / Acción',d:'Lo que el público ve: lugar, personajes y lo que hacen.'},
+ {k:'Audio / Diálogo',d:'Lo que el público oye: voces, música y sonidos.'},
+ {k:'Tiempo',d:'Cuánto dura la toma. Sumarlos te dice la duración total.'}
+];
+const ROWS=[
+ ['1A','Plano general','Laura entra al salón; todos botan todo en una bolsa negra.','Sonido ambiente del salón',6],
+ ['1B','Plano detalle','La caneca de reciclaje, vacía y llena de polvo.','Silencio y un golpe seco',4],
+ ['1C','Plano medio','Laura y Tomás hablan junto a la caneca.','LAURA: «¿Y las botellas? ¿Nadie las separa?»',12],
+ ['2','Primer plano','Laura dibuja un cartel con letras de colores.','Música suave',8]
+];
+const STEPS=[
+ ['📝','Lista tus escenas','Escribe en una línea qué pasa en cada escena. Entre 3 y 5 bastan para empezar.'],
+ ['🔢','Ponlas en orden','Inicio, desarrollo y final. Cada escena debe llevar a la siguiente.'],
+ ['📍','Elige lugares y personajes','Anota dónde ocurre cada escena y quién aparece.'],
+ ['⏱️','Calcula el tiempo','Estima los segundos de cada escena y suma el total.'],
+ ['✅','Revisa si es posible','¿Tienes los objetos, permisos y tiempo? Si no, simplifica.']
+];
+const PLAN_ICONS=[];
+const Q=[
+ {q:'En el proyecto de Laura, ¿quién es el público?',o:['Los profesores de la universidad','Estudiantes de sexto y séptimo','Solo la familia de Laura','Los vecinos del barrio'],a:1,why:'El público es la gente a la que le hablas. Laura eligió estudiantes de sexto y séptimo.'},
+ {q:'¿Qué muestra un guion literario como el de la escena de Laura?',o:['Qué ocurre y qué dicen los personajes','Qué cámara se va a usar','Cuánto cuesta grabar','Qué música suena en los créditos'],a:0,why:'El guion literario cuenta la acción, el lugar y los diálogos, como un cuento.'},
+ {q:'En la tabla del guion técnico, la columna «Plano» indica…',o:['El presupuesto de la escena','Cuánto dura cada diálogo','Qué tan cerca o lejos se muestra lo que se graba','El nombre del actor'],a:2,why:'El plano (general, medio, primer plano, detalle) decide el encuadre de cada toma.'},
+ {q:'Antes de grabar, ¿qué paso te ayuda a saber si tu plan es posible?',o:['Revisar viabilidad: objetos, lugares y tiempo','Añadir más escenas','Cambiar el título','Grabar sin ensayar'],a:0,why:'La viabilidad evita sorpresas: si te falta algo, simplificas el plan antes de grabar.'}
+];
+const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+
+/* ---------- Hero ---------- */
+const Hero=()=>html`
+<header className="bg-[#151a33] text-white overflow-hidden">
+  <div className="max-w-5xl mx-auto px-5 pt-8 pb-16">
+    <nav className="flex flex-wrap gap-2 mb-12" aria-label="Secciones">
+      ${[['#teoria','Teoría'],['#guiones','Guiones'],['#pasos','Planificación'],['#trivia','Trivia']].map(([h,t])=>html`<a key=${h} href=${h} className="border border-white/40 rounded-full px-4 py-1 text-sm hover:bg-white hover:text-[#151a33] transition-colors">${t}</a>`)}
+    </nav>
+    <div className="grid md:grid-cols-2 gap-10 items-center">
+      <div>
+        <h1 className="font-display font-extrabold text-5xl md:text-7xl leading-none mb-5">Toda película empieza en papel</h1>
+        <p className="text-lg text-white/80 max-w-md">La preproducción es el trabajo que ocurre antes de grabar. Aquí lo verás con esquemas, ejemplos reales y una trivia para comprobar lo aprendido.</p>
+      </div>
+      <div className="flex items-center justify-center gap-3" aria-hidden="true">
+        ${[['💡','Idea','#5b3df5',-4],['📝','Guion','#ff5d73',3],['🎞️','Escenas','#0e8f67',-2]].map(([e,t,c,r],i)=>html`
+          <${motion.div} key=${t} initial=${{opacity:0,y:40,rotate:0}} animate=${{opacity:1,y:0,rotate:r}} transition=${{delay:.2+i*.18,type:'spring',stiffness:120}}
+            className="w-28 md:w-32 aspect-[3/4] rounded-xl border-4 border-white grid place-items-center text-center" style=${{background:c}}>
+            <div><div className="text-4xl md:text-5xl">${e}</div><div className="font-bold mt-2">${t}</div></div>
+          <//>`)}
+      </div>
+    </div>
+  </div>
+  <div className="h-8" style=${{background:'repeating-linear-gradient(115deg,#ffc93c 0 38px,#151a33 38px 76px)'}}></div>
+</header>`;
+
+/* ---------- Teoría ---------- */
+const Concepts=()=>html`
+<div className="grid md:grid-cols-3 gap-5">
+${CONCEPTS.map(c=>html`<article key=${c.t} className="bg-surf border border-line rounded-2xl p-4 flex flex-col gap-3">
+  <${Ph} emoji=${c.emo} label=${c.img} a=${c.a} b=${c.b}/>
+  <h3 className="font-display text-2xl font-extrabold">${c.ico} ${c.t}</h3>
+  <p className="text-mut">${c.d}</p>
+  <ul className="space-y-1">${c.bul.map(([i,t])=>html`<li key=${t} className="flex gap-2"><span aria-hidden="true">${i}</span><span>${t}</span></li>`)}</ul>
+  <p className="mt-auto text-sm bg-page rounded-xl p-3"><b>Ejemplo:</b> ${c.ex}</p>
+</article>`)}
+</div>`;
+
+const LiteraryScript=()=>{
+  const [hl,setHl]=useState(null);
+  const H=k=>hl===k?'hl':'';
+  const chips=[['head','Título de escena'],['action','Acción'],['dialog','Diálogo']];
+  return html`
+  <div className="grid lg:grid-cols-5 gap-6 items-start">
+    <div className="lg:col-span-2">
+      <h3 className="font-display text-2xl font-extrabold mb-2">📖 Guion literario</h3>
+      <p className="text-mut mb-4">Cuenta la historia con palabras: <b className="text-ink">qué ocurre y qué se dice</b>. No explica cómo se va a filmar. Toca una etiqueta para ver esa parte en el ejemplo.</p>
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Partes del guion">
+        ${chips.map(([k,t])=>html`<button key=${k} type="button" onClick=${()=>setHl(hl===k?null:k)} aria-pressed=${hl===k}
+          className=${'px-4 py-2 rounded-full font-bold border-2 transition-all '+(hl===k?'bg-sun text-[#151a33] border-sun':'bg-surf border-line hover:border-brand')}>${t}</button>`)}
+      </div>
+    </div>
+    <article className="lg:col-span-3 bg-white text-[#1a1a1a] rounded-lg shadow-xl border border-line p-6 md:p-10 font-script text-[15px] md:text-base" aria-label="Ejemplo de guion literario">
+      <p className=${'font-bold mb-4 '+H('head')}>ESCENA 1 – INT. SALÓN DE 8°B – DÍA</p>
+      <p className=${'mb-5 '+H('action')}>Laura entra con su mochila. Todos botan sus residuos en una bolsa negra. En la esquina, la caneca de reciclaje está vacía y cubierta de polvo.</p>
+      <div className=${'text-center mb-4 '+H('dialog')}>
+        <p className="font-bold">LAURA</p><p className="italic">(sorprendida)</p><p className="max-w-xs mx-auto">¿Y las botellas? ¿Nadie las separa?</p>
+      </div>
+      <div className=${'text-center '+H('dialog')}>
+        <p className="font-bold">TOMÁS</p><p className="italic">(sin levantar la vista)</p><p className="max-w-xs mx-auto">Eso le toca al aseo, Laura.</p>
+      </div>
+    </article>
+  </div>`;
+};
+
+const TechTable=()=>{
+  const [col,setCol]=useState(1);
+  const [row,setRow]=useState(null);
+  const total=ROWS.reduce((s,r)=>s+r[4],0);
+  const pc={'Plano general':'#5b3df5','Plano detalle':'#ff5d73','Plano medio':'#0e8f67','Primer plano':'#c77d00'};
+  return html`
+  <div>
+    <h3 className="font-display text-2xl font-extrabold mb-2">🎥 Guion técnico</h3>
+    <p className="text-mut max-w-2xl mb-4">Explica <b className="text-ink">cómo se mostrará cada escena</b>: imagen, plano, audio y tiempo. Es la guía del equipo de grabación. Toca un encabezado para entender la columna.</p>
+    <div className="overflow-x-auto rounded-2xl border border-line bg-surf">
+      <table className="w-full min-w-[720px] text-left border-collapse">
+        <thead><tr>${COLS.map((c,i)=>html`<th key=${c.k} className=${'p-0 '+(col===i?'bg-brand':'bg-[#151a33]')}>
+          <button type="button" onClick=${()=>setCol(i)} aria-pressed=${col===i} className="w-full text-left text-white font-bold px-4 py-3">${c.k}</button></th>`)}</tr></thead>
+        <tbody>${ROWS.map((r,ri)=>html`<tr key=${r[0]} onMouseEnter=${()=>setRow(ri)} onMouseLeave=${()=>setRow(null)} onClick=${()=>setRow(ri)}
+          className=${'border-t border-line transition-colors cursor-pointer '+(row===ri?'bg-page':'')}>
+          ${r.map((v,ci)=>html`<td key=${ci} className=${'px-4 py-3 align-top '+(col===ci?'bg-page font-medium':'')}>
+            ${ci===0?html`<span className="font-display font-extrabold text-xl text-brand">${v}</span>`
+             :ci===1?html`<span className="inline-block text-white text-sm font-bold rounded-md px-2 py-0.5" style=${{background:pc[v]}}>${v}</span>`
+             :ci===4?fmt(v):v}</td>`)}
+        </tr>`)}</tbody>
+        <tfoot><tr className="border-t-2 border-line font-bold"><td className="px-4 py-3" colSpan="4">Duración total</td><td className="px-4 py-3 text-brand">${fmt(total)}</td></tr></tfoot>
+      </table>
+    </div>
+    <${AnimatePresence} mode="wait">
+      <${motion.p} key=${col} initial=${{opacity:0,y:8}} animate=${{opacity:1,y:0}} className="mt-4 bg-surf border border-line border-l-8 border-l-brand rounded-xl p-4" aria-live="polite">
+        <b>${COLS[col].k}:</b> ${COLS[col].d}
+      <//>
+    <//>
+  </div>`;
+};
+
+const Steps=()=>{
+  const [done,setDone]=useState([]);
+  const tog=i=>setDone(d=>d.includes(i)?d.filter(x=>x!==i):[...d,i]);
+  return html`
+  <div>
+    <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    ${STEPS.map(([e,t,d],i)=>html`
+      <${motion.button} key=${t} type="button" onClick=${()=>tog(i)} aria-pressed=${done.includes(i)} whileHover=${{y:-4}} whileTap=${{scale:.97}}
+        className=${'text-left rounded-2xl p-4 border-2 transition-colors '+(done.includes(i)?'bg-okbg border-ok':'bg-surf border-line')}>
+        <div className="flex items-center justify-between mb-2"><span className="text-3xl" aria-hidden="true">${e}</span>
+          <span className=${'w-7 h-7 rounded-full grid place-items-center font-bold text-sm '+(done.includes(i)?'bg-ok text-white':'bg-page text-mut border border-line')}>${done.includes(i)?'✓':i+1}</span></div>
+        <h3 className="font-bold mb-1">${t}</h3><p className="text-sm text-mut">${d}</p>
+      <//>`)}
+    </div>
+    <p className="mt-4 text-mut" aria-live="polite">Toca cada paso cuando lo domines: <b className="text-ink">${done.length} de ${STEPS.length}</b></p>
+  </div>`;
+};
+
+/* ---------- Trivia ---------- */
+const Confetti=()=>{
+  const items=useMemo(()=>Array.from({length:18},(_,i)=>({e:['🎉','⭐','🎬','✨','🏆'][i%5],x:(Math.random()-.5)*420,d:Math.random()*.6,r:Math.random()*360})),[]);
+  return html`<div className="absolute inset-x-0 top-1/2 pointer-events-none" aria-hidden="true">${items.map((p,i)=>html`
+    <${motion.span} key=${i} className="absolute left-1/2 text-2xl" initial=${{y:0,x:0,opacity:1,scale:0}} animate=${{y:-170-Math.random()*60,x:p.x,opacity:0,scale:1.2,rotate:p.r}} transition=${{duration:1.6,delay:p.d}}>${p.e}<//>`)}</div>`;
+};
+
+const Quiz=()=>{
+  const [i,setI]=useState(0),[pick,setPick]=useState(null),[score,setScore]=useState(0),[fin,setFin]=useState(false);
+  const q=Q[i],answered=pick!==null,wrong=answered&&pick!==q.a;
+  const choose=k=>{if(answered)return;setPick(k);if(k===q.a)setScore(s=>s+1)};
+  const next=()=>{if(i+1>=Q.length)setFin(true);else{setI(i+1);setPick(null)}};
+  const again=()=>{setI(0);setPick(null);setScore(0);setFin(false)};
+  const msg=['Sigue practicando: repasa los ejemplos y vuelve a intentarlo.','Buen comienzo. Repasa los conceptos que fallaste.','Muy bien. Ya dominas casi todo.','¡Excelente! Ya puedes planear tu propio audiovisual.','¡Director o directora de cine! Puntaje perfecto.'][score];
+  if(fin)return html`
+    <div className="relative bg-surf border border-line rounded-3xl p-8 md:p-12 text-center overflow-hidden">
+      ${score>=3&&html`<${Confetti}/>`}
+      <${motion.div} initial=${{scale:0,rotate:-20,opacity:0}} animate=${{scale:1,rotate:0,opacity:1}} transition=${{type:'spring',stiffness:180,damping:10}}>
+        <div className="text-7xl mb-2" aria-hidden="true">${score===4?'🏆':score>=2?'🎬':'📚'}</div>
+        <p className="font-display text-6xl md:text-7xl font-extrabold text-brand">${score}<span className="text-mut text-4xl"> / ${Q.length}</span></p>
+      <//>
+      <${motion.p} initial=${{opacity:0,y:20}} animate=${{opacity:1,y:0}} transition=${{delay:.5}} className="text-xl mt-4 max-w-md mx-auto" aria-live="polite">${msg}<//>
+      <${motion.button} type="button" onClick=${again} whileHover=${{scale:1.06}} whileTap=${{scale:.95}} className="mt-8 bg-brand text-white font-bold rounded-xl px-6 py-3">Jugar de nuevo<//>
+    </div>`;
+  return html`
+  <${motion.div} key=${i} initial=${{opacity:0,x:40}} animate=${wrong?{opacity:1,x:RM?0:[0,-14,14,-10,10,-5,0]}:{opacity:1,x:0}} transition=${{duration:wrong?.5:.3}}
+    className=${'rounded-3xl p-6 md:p-10 border-2 transition-colors duration-300 '+(wrong?'bg-badbg border-bad':'bg-surf border-line')}>
+    <div className="flex items-center justify-between mb-6">
+      <p className="font-bold text-mut">Pregunta ${i+1} de ${Q.length}</p>
+      <div className="flex gap-2" aria-hidden="true">${Q.map((_,k)=>html`<span key=${k} className=${'w-8 h-2 rounded-full '+(k<i?'bg-ok':k===i?'bg-brand':'bg-line')}></span>`)}</div>
+      <p className="font-bold">⭐ ${score}</p>
+    </div>
+    <h3 className="font-display text-2xl md:text-3xl font-extrabold mb-6">${q.q}</h3>
+    <div className="grid gap-3">
+    ${q.o.map((t,k)=>{
+      const st=!answered?'idle':k===q.a?'right':k===pick?'bad':'dim';
+      const cls={idle:'bg-page border-line',right:'bg-okbg border-ok',bad:'bg-badbg border-bad',dim:'bg-page border-line opacity-50'}[st];
+      return html`<${motion.button} key=${k} type="button" onClick=${()=>choose(k)} aria-disabled=${answered}
+        whileHover=${!answered?{y:-3,boxShadow:'0 10px 24px 0 rgba(91,61,245,.28)'}:{}} whileTap=${!answered?{scale:.98}:{}}
+        animate=${st==='right'&&!RM?{scale:[1,1.05,.98,1],y:[0,-12,0,0],boxShadow:['0 0 0 0 rgba(14,143,103,.7)','0 0 0 16px rgba(14,143,103,0)']}:{scale:1,y:0,boxShadow:'0 0 0 0 rgba(91,61,245,0)'}}
+        transition=${{duration:.6}} className=${'flex items-center gap-3 text-left rounded-2xl border-2 px-4 py-3 font-medium '+cls}>
+        <span className=${'w-9 h-9 shrink-0 rounded-full grid place-items-center font-bold '+(st==='right'?'bg-ok text-white':st==='bad'?'bg-bad text-white':'bg-surf border border-line')}>${st==='right'?'✓':st==='bad'?'✗':'ABCD'[k]}</span>
+        <span>${t}</span></${motion.button}>`;
+    })}
+    </div>
+    <div aria-live="polite" className="min-h-[1px]">
+    <${AnimatePresence}>
+      ${answered&&html`<${motion.div} key="fb" initial=${{opacity:0,y:12}} animate=${{opacity:1,y:0}} className=${'mt-6 rounded-2xl p-4 border-2 '+(wrong?'border-bad':'border-ok')}>
+        <p className="font-bold mb-1">${wrong?'Casi. Revisa esta pista:':'¡Correcto!'}</p><p>${q.why}</p>
+        <button type="button" onClick=${next} className="mt-4 bg-brand text-white font-bold rounded-xl px-5 py-2 hover:brightness-110">${i+1>=Q.length?'Ver mi puntaje':'Siguiente pregunta'}</button>
+      <//>`}
+    <//></div>
+  <//>`;
+};
+
+const App=()=>html`
+<div>
+  <${Hero}/>
+  <${Section} id="teoria" title="Idea, propósito y público" intro="Tres decisiones que se toman antes de escribir una sola escena. Usaremos un proyecto de ejemplo: el de Laura y el reciclaje.">
+    <${Concepts}/>
+  <//>
+  <${Section} id="guiones" alt=${true} title="Dos guiones, dos trabajos" intro="El mismo proyecto de Laura, contado de dos maneras: primero con palabras y después con instrucciones de grabación.">
+    <div className="space-y-16"><${LiteraryScript}/><${TechTable}/></div>
+  <//>
+  <${Section} id="pasos" title="Planifica y organiza tus escenas" intro="Cinco pasos para pasar de la idea a un plan que puedas grabar.">
+    <${Steps}/>
+  <//>
+  <${Section} id="trivia" alt=${true} title="Trivia: ¿qué aprendiste?" intro="Cuatro preguntas basadas en los ejemplos de esta página. Solo tienes un intento por pregunta.">
+    <div className="max-w-3xl"><${Quiz}/></div>
+  <//>
+  <footer className="py-8 text-center text-mut text-sm">Preproducción audiovisual · Material para estudiantes de secundaria</footer>
+</div>`;
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${App}/>`);
+</script>
+</body>
+</html>
